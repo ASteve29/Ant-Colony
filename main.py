@@ -15,7 +15,7 @@ tile_size = screen_width // width
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Ant Colony Grid")
 
-ant_num = 5
+ant_num = 50
 jobs = ["scout", "forager"]
 goals = ["find food", "to home"]
 
@@ -39,6 +39,11 @@ class Ant:
         self.x = self.x + random.randint(-1, 1)
         self.y = self.y + random.randint(-1, 1)
 
+        self.x = max(0, min(width - 1, self.x))
+        self.y = max(0, min(height - 1, self.y))
+
+# --- Define grid ---
+
 grid = [[Tile() for x in range(width)] for y in range(height)]
 
 colony_pos = (width // 2, height // 2)
@@ -54,7 +59,7 @@ clock = pygame.time.Clock()
 running = True
 while running:
 
-    clock.tick(1)
+    clock.tick(25)
 
     for y in range(height):
         for x in range(width):
@@ -73,12 +78,38 @@ while running:
     screen.fill((0, 0, 0))
 
     # --- Draw grid ---
+    grid[colony_pos[1]] [colony_pos[0]].pheromones['home'] = 64
+
+    current_pheromones = [[grid[y][x].pheromones["home"] for x in range(width)] for y in range(height)]
+
     for y in range(height):
         for x in range(width):
-            if grid[y][x].pheromones["home"] > 0 or grid[y][x].ant != 0:
-                colour = (grid[y][x].ant * 50, grid[y][x].pheromones["home"]*1.5, 0)  # home pheromone tile green
+
+            neighbor_pheromone = 0
+            directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+            for dx, dy in directions:
+                nx, ny = x + dx, y + dy
+                
+                if 0 <= nx < width and 0 <= ny < height:
+                     neighbor_pheromone += current_pheromones[ny][nx]
+                
+            diffusion_factor = 0.25
+            evaporation = 0.999
+            
+            current_scent = current_pheromones[y][x]
+            new_scent = (current_scent * (1 - 4 * diffusion_factor)) + (neighbor_pheromone * diffusion_factor)
+            grid[y][x].pheromones["home"] = new_scent * evaporation
+
+
+    for y in range(height):
+        for x in range(width):
+            if grid[y][x].pheromones["home"] > 6 or grid[y][x].ant != 0:
+                red = min(255, grid[y][x].ant * 75)
+                green = min(255, int(grid[y][x].pheromones["home"] * 4)) 
+                colour = (red, green, 0)
             else:
-                colour = (50, 50, 50)  # Empty tile grey
+                colour = (10, 10, 10)
             pygame.draw.rect(screen, colour, (x * tile_size, y * tile_size, tile_size, tile_size))
 
     # --- Update display ---
