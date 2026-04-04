@@ -35,4 +35,7 @@ Ants choose movement based on weighted pheromone signals.
 ## How to run
 
 Install pygame and run:
-'''python main.py'''
+```bash
+pip install pygame
+python main.py
+```
