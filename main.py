@@ -6,8 +6,11 @@ from entities import Ant, Tile, diffuse_pheromones, draw_grid
 pygame.init()
 
 # --- Window / grid setup ---
-screen_width = 500
-screen_height = 500
+
+info = pygame.display.Info()
+
+screen_width = min(info.current_w, info.current_h)
+screen_height = screen_width
 width = 100
 height = 100
 
