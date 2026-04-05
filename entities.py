@@ -2,9 +2,9 @@ import random
 import pygame
 
 colour_map = {
-    "scout ant": (1, 0, 1),
-    "forager ant": (0, 0, 1),
-    "home": (0, 1, 0),
+    "scout ant": (5, 0, 5),
+    "forager ant": (0, 5, 5),
+    "home": (0, 2, 0),
     "food": (1, 0.5, 0)
 }
 
@@ -15,14 +15,14 @@ goals = ["find food", "go home", "explore", "mate"]
 pheromone_settings = {
     "home": {"diffusion": 0.2, "evaporation": 0.99999999},
     "food": {"diffusion": 0.15, "evaporation": 0.999},
-    "forager ant": {"diffusion": 0.05, "evaporation": 0.98},
-    "scout ant": {"diffusion": 0.05, "evaporation": 0.98}
+    "forager ant": {"diffusion": 0.05, "evaporation": 0.9},
+    "scout ant": {"diffusion": 0.05, "evaporation": 0.9}
 }
 
 goal_targets = {
-    "find food": {"home": -0.1, "food": 1, "forager ant": 0.1, "scout ant": 0.1},
+    "find food": {"home": -3, "food": 1, "forager ant": 0.1, "scout ant": 0.1},
     "go home": {"home": 1, "food": 0.1, "forager ant": 0.2, "scout ant": 0.2},
-    "explore": {"home": -1, "food": 0.1, "forager ant": 0.1, "scout ant": -0.5},
+    "explore": {"home": -5, "food": 0.1, "forager ant": 0.1, "scout ant": -1},
     "mate": {"home": 0.5, "food": 0.1, "forager ant": 1, "scout ant": 1}
 }
 
@@ -40,12 +40,34 @@ class Tile:
 
 class Ant:
     def __init__(self, pos):
-        self.x, self.y = pos
+        self.x = pos[0] + random.randint(-5, 5)
+        self.y = pos[1] + random.randint(-5, 5)
         self.job = "scout"
         self.goal = "explore"
         self.health = 500
+        self.food = 0
 
     def move(self, grid, width, height):
+        if grid[self.y][self.x].food > 0:
+        	self.food += 1
+        	grid[self.y][self.x].food -= 1
+        
+        if self.food > 0:
+        	self.goal = "go home"
+        	self.job = "forager"
+        elif self.health < 50:
+        	self.goal = random.choices(["go home", "mate"], weights=[1, 1], k=1)[0]
+       
+        if self.goal == "go home" and self.job == "forager":
+            scent = "food"
+        elif self.goal == "find food" or self.goal == "explore":
+            scent = "home"
+        
+        grid[self.y][self.x].pheromones[scent] += 4 * self.health/500
+        
+        scent = self.job +" ant"
+        grid[self.y][self.x].pheromones[scent] += 5 * self.health/500 
+        	
         options = []
         weights = []
         for dx in [-1, 0, 1]:
@@ -63,9 +85,13 @@ class Ant:
                             weight = pheromone_amount * goal_targets[self.goal].get(scents, baseline_amount)
                             total_score += weight
 
-                        weights.append(max(baseline_amount, total_score))
+                        weights.append(total_score)
+        
+        weights = [x - min(weights) + 1 for x in weights]
+      
         self.x, self.y = random.choices(options, weights=weights, k=1)[0]
         self.health -= 1
+        
 
 # Functions
 def diffuse_pheromones(grid, width, height):
@@ -103,7 +129,7 @@ def draw_grid(surface, grid, width, height):
                 b += min(amount / max_display_value, 1) * factor[2] * 255
 
             # clamp to 0–255
-            r = min(255, int(r + tile.ant * 75))
+            r = min(255, int(r + tile.ant * 100))
             g = min(255, int(g))
             b = min(255, int(b))
             pixels[x, y] = (r, g, b)

@@ -32,7 +32,7 @@ ants = [Ant(colony_pos) for _ in range(ant_num)]
 grid[colony_pos[1]][colony_pos[0]].pheromones['home'] = 64.0
 
 for ant in ants:
-    grid[ant.y][ant.x].ant += 1
+    grid[ant.y][ant.x].ant += ant.health/500
 
 
 
@@ -60,7 +60,7 @@ while running:
 
     for ant in ants:
         ant.move(grid, width, height)
-        grid[ant.y][ant.x].ant += 1
+        grid[ant.y][ant.x].ant += ant.health/500
 
 
     for event in pygame.event.get():
