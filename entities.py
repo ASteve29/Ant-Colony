@@ -2,10 +2,10 @@ import random
 import pygame
 
 colour_map = {
-    "scout ant": (5, 0, 5),
-    "forager ant": (0, 5, 5),
+    "scout ant": (3, 0, 3),
+    "forager ant": (0, 3, 3),
     "home": (0, 2, 0),
-    "food": (1, 0.5, 0)
+    "food": (2, 2, 0)
 }
 
 baseline_amount = 0.01
@@ -14,22 +14,22 @@ goals = ["find food", "go home", "explore", "mate"]
 
 pheromone_settings = {
     "home": {"diffusion": 0.2, "evaporation": 0.99999999},
-    "food": {"diffusion": 0.15, "evaporation": 0.999},
+    "food": {"diffusion": 0.015, "evaporation": 0.99},
     "forager ant": {"diffusion": 0.05, "evaporation": 0.9},
     "scout ant": {"diffusion": 0.05, "evaporation": 0.9}
 }
 
 goal_targets = {
-    "find food": {"home": -3, "food": 1, "forager ant": 0.1, "scout ant": 0.1},
-    "go home": {"home": 1, "food": 0.1, "forager ant": 0.2, "scout ant": 0.2},
-    "explore": {"home": -5, "food": 0.1, "forager ant": 0.1, "scout ant": -1},
+    "find food": {"home": -30, "food": 3, "forager ant": 0.1, "scout ant": 0.1},
+    "go home": {"home": 50, "food": 0.01, "forager ant": 0, "scout ant": 0},
+    "explore": {"home": -5, "food": 0.1, "forager ant": 0, "scout ant": -1},
     "mate": {"home": 0.5, "food": 0.1, "forager ant": 1, "scout ant": 1}
 }
 
 # Classes
 class Tile:
     def __init__(self):
-        self.food = 0
+        self.food = random.choices([0, 1, 2, 4, 8, 16], weights = [50000, 25, 12, 6, 3, 1], k=1)[0]
         self.ant = 0
         self.pheromones = {
             "home": 0.0,
@@ -40,30 +40,43 @@ class Tile:
 
 class Ant:
     def __init__(self, pos):
-        self.x = pos[0] + random.randint(-5, 5)
-        self.y = pos[1] + random.randint(-5, 5)
+        self.x = pos[0] + random.randint(-25, 25)
+        self.y = pos[1] + random.randint(-25, 25)
         self.job = "scout"
         self.goal = "explore"
-        self.health = 500
+        self.health = 1000
         self.food = 0
 
     def move(self, grid, width, height):
         if grid[self.y][self.x].food > 0:
         	self.food += 1
+        	self.health += 10
         	grid[self.y][self.x].food -= 1
+        if grid[self.y][self.x].pheromones["scout ant"] > 16 and self.job == "scout":
+        	self.job = random.choices(jobs, [1, 10], k=1)[0]
+        elif grid[self.y][self.x].pheromones["forager ant"] > 16 and self.job == "forager":
+        	self.job = random.choices(jobs, [10, 1], k=1)[0]
         
         if self.food > 0:
         	self.goal = "go home"
         	self.job = "forager"
+        	if grid[self.y][self.x].pheromones["home"] > 32:
+        		self.food -= 1
+        		self.health += 50
+        		self.goal, self.job = random.choices([("explore", "scout"), ("find food", "forager")], weights=[1, 1], k=1)[0]
         elif self.health < 50:
         	self.goal = random.choices(["go home", "mate"], weights=[1, 1], k=1)[0]
        
         if self.goal == "go home" and self.job == "forager":
             scent = "food"
+            grid[self.y][self.x].pheromones[scent] += 4 * self.health/500
         elif self.goal == "find food" or self.goal == "explore":
-            scent = "home"
-        
-        grid[self.y][self.x].pheromones[scent] += 4 * self.health/500
+           	scent = "home"
+           	grid[self.y][self.x].pheromones[scent] += self.health/500
+           	
+        #elif self.goal == "find food" or self.goal == "explore":
+            #scent = "home"
+            #grid[self.y][self.x].pheromones[scent] += 3 * self.health/500
         
         scent = self.job +" ant"
         grid[self.y][self.x].pheromones[scent] += 5 * self.health/500 
@@ -119,7 +132,7 @@ def draw_grid(surface, grid, width, height):
     for y in range(height):
         for x in range(width):
             tile = grid[y][x]
-
+            
             r, g, b = 0, 0, 0
             for pheromone, factor in colour_map.items():
                 amount = tile.pheromones.get(pheromone, 0)
@@ -129,8 +142,8 @@ def draw_grid(surface, grid, width, height):
                 b += min(amount / max_display_value, 1) * factor[2] * 255
 
             # clamp to 0–255
-            r = min(255, int(r + tile.ant * 100))
-            g = min(255, int(g))
+            r = min(255, int(r + tile.ant * 100 + tile.food * 10))
+            g = min(255, int(g + tile.food * 75))
             b = min(255, int(b))
             pixels[x, y] = (r, g, b)
 

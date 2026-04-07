@@ -11,8 +11,8 @@ info = pygame.display.Info()
 
 screen_width = min(info.current_w, info.current_h)
 screen_height = screen_width
-width = 100
-height = 100
+width = 200
+height = 200
 
 # Automatically calculate tile size so the grid fits the window
 tile_size = screen_width // width
@@ -20,11 +20,19 @@ tile_size = screen_width // width
 screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
 pygame.display.set_caption("Ant Colony Grid")
 
-ant_num = 50
+ant_num = 200
 
 # --- Define grid ---
 grid = [[Tile() for x in range(width)] for y in range(height)]
-
+for y in range(height):
+	for x in range(width):
+		if grid[y][x].food > 0:
+			for dy in [-1, 0, 1]:
+				for dx in [-1, 0, 1]:
+					ny, nx = dy+y, dx+x
+					if ny < height and nx < width:
+						grid[ny][nx].food += random.choices([0, 1, 2, 4, 8, 16], weights = [200, 25, 12, 6, 3, 1], k=1)[0]
+		                        	
 colony_pos = (width // 2, height // 2)
 ants = [Ant(colony_pos) for _ in range(ant_num)]
 
@@ -32,7 +40,7 @@ ants = [Ant(colony_pos) for _ in range(ant_num)]
 grid[colony_pos[1]][colony_pos[0]].pheromones['home'] = 64.0
 
 for ant in ants:
-    grid[ant.y][ant.x].ant += ant.health/500
+    grid[ant.y][ant.x].ant += ant.health/1000
 
 
 
@@ -47,20 +55,19 @@ running = True
 
 while running:
 
-    clock.tick(25)
-
-
+    clock.tick(50)
+    
     for y in range(height):
         for x in range(width):
             grid[y][x].ant = 0
-    
+
 
     ants = [ant for ant in ants if ant.health > 0]
 
 
     for ant in ants:
         ant.move(grid, width, height)
-        grid[ant.y][ant.x].ant += ant.health/500
+        grid[ant.y][ant.x].ant += ant.health/1000
 
 
     for event in pygame.event.get():
