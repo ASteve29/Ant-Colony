@@ -1,7 +1,8 @@
 import random
 import pygame
 import numpy as np
-from entities import Ant, diffuse_pheromones, draw_grid
+from entities import Ant, diffuse_pheromones, draw_grid, evap_rates, diffuse_rates
+from ui import draw_custom_slider, draw
 
 pygame.init()
 
@@ -12,8 +13,9 @@ P_FOOD = 3
 P_FORAGER = 4
 P_SCOUT = 5
 
-# --- Window / grid setup ---
+ui_alphas = [0.0, 0.0, 0.0, 0.0] 
 
+# --- Window / grid setup ---
 
 info = pygame.display.Info()
 
@@ -56,12 +58,13 @@ clock = pygame.time.Clock()
 grid_surface = pygame.Surface((width, height))
 running = True
 
-
+brush_size = 5
+brush_layer = 0
 
 while running:
 
-    clock.tick(25)
-    
+    time_delta = clock.tick(25) / 1000.0 
+
     grid[ :, :, ANT] = 0
     if random.randrange(0, 100, 1) > 90:
         ants.append(Ant(colony_pos, 5))
@@ -74,16 +77,18 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.MOUSEWHEEL:
+            brush_size = max(1, brush_size + event.y)
 
     mouse_buttons = pygame.mouse.get_pressed()
     if mouse_buttons[0]: # 0 is Left Click
         mx, my = pygame.mouse.get_pos()
-        grid_x = int(mx * (width / screen_width))
-        grid_y = int(my * (height / screen_height))
-        
-        if 0 <= grid_x < width and 0 <= grid_y < height:
-            # Paint a small 3x3 square of food
-            grid[grid_x-1:grid_x+2, grid_y-1:grid_y+2, FOOD] += 1
+        if not (mx < 200 and my < 150): 
+            draw(grid, screen_width, screen_height, FOOD, brush_size, 1)
+    if mouse_buttons[2]:
+        mx, my = pygame.mouse.get_pos()
+        if not (mx < 200 and my < 150): 
+            draw(grid, screen_width, screen_height, FOOD, brush_size, -10)
 
     grid[colony_pos[0], colony_pos[1], P_HOME] = 128.0
     diffuse_pheromones(grid, width, height)
@@ -92,6 +97,19 @@ while running:
 
     scaled_surface = pygame.transform.scale(grid_surface, (screen_width, screen_height))
     screen.blit(scaled_surface, (0, 0))
+
+    for i in range(4):
+        evap_rates[i] = draw_custom_slider(screen, 20, 10 + i * 35, 150, evap_rates[i], 0.99, 1, "Home Evap")
+
+    cursor_surf = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+    mx, my = pygame.mouse.get_pos()
+
+    # Draw a soft circle (mapping grid brush_size back to screen pixels)
+    screen_brush_radius = int(brush_size * (screen_width / width))
+    pygame.draw.circle(cursor_surf, (255, 255, 255, 50), (mx, my), screen_brush_radius)
+    pygame.draw.circle(cursor_surf, (255, 255, 255, 100), (mx, my), screen_brush_radius, 2)
+
+    screen.blit(cursor_surf, (0, 0))
 
     pygame.display.flip()
 

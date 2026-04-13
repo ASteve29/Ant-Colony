@@ -150,8 +150,9 @@ def draw_grid(surface, grid):
 
     # 3. Add the actual Food and Ants (the "Physical" layers)
     # You used + tile.ant * 100 + tile.food * 10 in your original code
-    rgb[:, :, 0] += grid[:, :, ANT] * 100 + grid[:, :, FOOD] * 10
-    rgb[:, :, 1] += grid[:, :, FOOD] * 75
+    rgb[:, :, 0] += grid[:, :, ANT] * 100 + grid[:, :, FOOD] * 75
+    rgb[:, :, 1] += grid[:, :, FOOD] * 35
+    rgb[:, :, 2] += grid[:, :, FOOD] * 35
 
     # 4. Final step: Clip values to 0-255 and convert to 8-bit integers
     final_rgb = np.clip(rgb, 0, 255).astype(np.uint8)
