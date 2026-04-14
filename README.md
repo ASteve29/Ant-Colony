@@ -31,6 +31,8 @@ Ants choose movement based on weighted probabilities using pheromone signals.
 - Configurable diffusion and evaporation
 - Goal-based decision making
 - Visual simulation using pygame
+- Editable world
+- Adjustable parameters
 
 ## How to run
 
