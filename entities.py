@@ -57,7 +57,7 @@ class Ant:
         if self.goal == "go home" and self.job == P_FORAGER:
             grid[self.x, self.y, P_FOOD] += (self.trail_strength / 10) * (self.health / 500)
             self.trail_strength *= 0.99
-            if grid[self.x, self.y, P_HOME] > 32:
+            if grid[self.x, self.y, P_HOME] > 64:
                 self.health += 50 * self.food
                 self.food = 0
                 self.goal = "find food"
@@ -152,7 +152,6 @@ def draw_grid(surface, grid):
     # You used + tile.ant * 100 + tile.food * 10 in your original code
     rgb[:, :, 0] += grid[:, :, ANT] * 100 + grid[:, :, FOOD] * 75
     rgb[:, :, 1] += grid[:, :, FOOD] * 35
-    rgb[:, :, 2] += grid[:, :, FOOD] * 35
 
     # 4. Final step: Clip values to 0-255 and convert to 8-bit integers
     final_rgb = np.clip(rgb, 0, 255).astype(np.uint8)

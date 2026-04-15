@@ -2,7 +2,7 @@ import random
 import pygame
 import numpy as np
 from entities import Ant, diffuse_pheromones, draw_grid, evap_rates, diffuse_rates
-from ui import draw_custom_slider, draw
+from ui import draw_custom_slider, draw, grow_food_clumps
 
 pygame.init()
 
@@ -26,11 +26,8 @@ height = 500
 
 grid = np.zeros((width, height, 6), dtype=float)
 
-food_vals = [0, 1, 2, 4, 8, 16]
-food_weights = [50000, 25, 12, 6, 3, 1]
-probs = np.array(food_weights) / sum(food_weights)
-
-grid[:, :, FOOD] = np.random.choice(food_vals, size=(width, height), p=probs)
+# Adding food
+grow_food_clumps(grid, num_clumps=20, steps=5, spread_chance=0.3, width = width, height = height)
 
 # Automatically calculate tile size so the grid fits the window
 tile_size = screen_width // width
@@ -73,13 +70,14 @@ while running:
         ant.move(grid, width, height)
         grid[ant.x, ant.y, ANT] += ant.health/1000
 
-
+    # Event
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEWHEEL:
             brush_size = max(1, brush_size + event.y)
 
+    # Mouse
     mouse_buttons = pygame.mouse.get_pressed()
     if mouse_buttons[0]: # 0 is Left Click
         mx, my = pygame.mouse.get_pos()
