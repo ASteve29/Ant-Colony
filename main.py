@@ -7,11 +7,11 @@ from ui import draw_custom_slider, draw, grow_food_clumps
 pygame.init()
 
 FOOD = 0
-ANT = 1
-P_HOME = 2
-P_FOOD = 3
-P_FORAGER = 4
-P_SCOUT = 5
+P_HOME = 1
+P_FOOD = 2
+P_FORAGER = 3
+P_SCOUT = 4
+ANT = 5
 
 ui_alphas = [0.0, 0.0, 0.0, 0.0] 
 
@@ -48,6 +48,7 @@ for ant in ants:
     grid[ant.x, ant.y, ANT] += ant.health/500
 
 
+draw_type = FOOD
 
 # --- Main loop ---
 clock = pygame.time.Clock()
@@ -76,28 +77,36 @@ while running:
             running = False
         elif event.type == pygame.MOUSEWHEEL:
             brush_size = max(1, brush_size + event.y)
+        elif event.type == pygame.KEYDOWN:
+            if event.unicode in ['1', '2', '3', '4', '5', '6']:
+                draw_type = int(event.unicode) - 1
 
     # Mouse
     mouse_buttons = pygame.mouse.get_pressed()
     if mouse_buttons[0]: # 0 is Left Click
         mx, my = pygame.mouse.get_pos()
         if not (mx < 200 and my < 150): 
-            draw(grid, screen_width, screen_height, FOOD, brush_size, 1)
+            draw(grid, screen_width, screen_height, draw_type, brush_size, 1)
     if mouse_buttons[2]:
         mx, my = pygame.mouse.get_pos()
         if not (mx < 200 and my < 150): 
-            draw(grid, screen_width, screen_height, FOOD, brush_size, -10)
+            draw(grid, screen_width, screen_height, draw_type, brush_size, -10)
 
-    grid[colony_pos[0], colony_pos[1], P_HOME] = 128.0
+    grid[colony_pos[0], colony_pos[1], P_HOME] = 256.0
     diffuse_pheromones(grid, width, height)
+
+    grid[:, :, 2:5] = np.clip(grid[:, :, 2:5], 0, 128)
 
     draw_grid(grid_surface, grid)
 
     scaled_surface = pygame.transform.scale(grid_surface, (screen_width, screen_height))
     screen.blit(scaled_surface, (0, 0))
 
+    
+    labels = ["Home Decay", "Food Decay", "Forager Decay", "Scout Decay"]
     for i in range(4):
-        evap_rates[i] = draw_custom_slider(screen, 20, 10 + i * 35, 150, evap_rates[i], 0.99, 1, "Home Evap")
+        # Expanded range (0.9 to 1.0) for better control
+        evap_rates[i] = draw_custom_slider(screen, 20, 10 + i * 35, 150, evap_rates[i], 0.9, 1.0, labels[i])
 
     cursor_surf = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
     mx, my = pygame.mouse.get_pos()

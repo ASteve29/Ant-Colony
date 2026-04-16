@@ -4,11 +4,11 @@ import numpy as np
 from scipy.ndimage import convolve
 
 FOOD = 0
-ANT = 1
-P_HOME = 2
-P_FOOD = 3
-P_FORAGER = 4
-P_SCOUT = 5
+P_HOME = 1
+P_FOOD = 2
+P_FORAGER = 3
+P_SCOUT = 4
+ANT = 5
 
 P_MAP = {
     "home": P_HOME,
@@ -21,13 +21,13 @@ baseline_amount = 0.01
 jobs = [P_SCOUT, P_FORAGER]
 goals = ["find food", "go home", "explore", "mate"]
 
-evap_rates = [0.99999999, 0.99, 0.9, 0.9]
+evap_rates = [0.99999999, 0.999, 0.99, 0.99]
 diffuse_rates = [0.2, 0.015, 0.05, 0.05]
 
 goal_targets = {
     "find food": {"home": -30, "food": 3, "forager ant": 0.1, "scout ant": 0.1},
-    "go home": {"home": 500, "food": 0.01, "forager ant": 0, "scout ant": 0},
-    "explore": {"home": -5, "food": 0.1, "forager ant": 0, "scout ant": 0.1},
+    "go home": {"home": 50, "food": 0.01, "forager ant": 0.1, "scout ant": 0.1},
+    "explore": {"home": -50, "food": 0.1, "forager ant": 0.1, "scout ant": 0.1},
     "mate": {"home": 0.5, "food": 0.1, "forager ant": 1, "scout ant": 1}
 }
 
@@ -37,6 +37,10 @@ class Ant:
     def __init__(self, pos, spawn_range):
         self.x = pos[0] + random.randint(-spawn_range, spawn_range)
         self.y = pos[1] + random.randint(-spawn_range, spawn_range)
+        self.dx = 0
+        self.dy = 0
+        self.old_x = 0
+        self.old_y = 0
         self.job = P_SCOUT
         self.goal = "explore"
         self.health = 1000
@@ -44,6 +48,9 @@ class Ant:
         self.trail_strength = 0
 
     def move(self, grid, width, height):
+        self.old_x = self.x
+        self.old_y = self.y
+
         # 1. Food Sensing (Index 0)
         if grid[self.x, self.y, FOOD] > 0:
             self.food += 1
@@ -55,30 +62,29 @@ class Ant:
 
         # 2. Dropping Pheromones
         if self.goal == "go home" and self.job == P_FORAGER:
-            grid[self.x, self.y, P_FOOD] += (self.trail_strength / 10) * (self.health / 500)
+            grid[self.x, self.y, P_FOOD] += min(5, (self.trail_strength / 10) * (self.health / 500))
             self.trail_strength *= 0.99
-            if grid[self.x, self.y, P_HOME] > 64:
+            if grid[self.x, self.y, P_HOME] > 64 and self.food > 0:
                 self.health += 50 * self.food
                 self.food = 0
                 self.goal = "find food"
-                self.trail_strength += 100
+                self.trail_strength += 50
         elif self.goal in ["find food", "explore"]:
-            grid[self.x, self.y, P_HOME] += self.health/500 + (self.trail_strength / 10)
+            grid[self.x, self.y, P_HOME] += min(5, self.health/500 + (self.trail_strength / 50))
         
         # Job-specific scent
         scent_idx = P_FORAGER if self.job == P_FORAGER else P_SCOUT
-        grid[self.x, self.y, scent_idx] += 5 * (self.health/500)
+        grid[self.x, self.y, scent_idx] += min(5, 5 * (self.health/500))
 
         # 3. Changing Jobs
-        if self.job == P_SCOUT and grid[self.x, self.y, P_SCOUT] > 10:
-            new_job = random.choices(jobs, weights=[100, grid[self.x, self.y, P_SCOUT]/10])[0]
+        if self.job == P_SCOUT and grid[self.x, self.y, P_SCOUT] > 16:
+            new_job = random.choices(jobs, weights=[100, grid[self.x, self.y, P_SCOUT]/8])[0]
             if new_job != self.job:
                 self.job = new_job
                 self.goal = "find food"
 
-        # 2. Forager to Scout transition
-        if self.job == P_FORAGER and grid[self.x, self.y, P_FORAGER] > 10:
-            new_job = random.choices(jobs, weights=[grid[self.x, self.y, P_FORAGER]/10, 100])[0]
+        if self.job == P_FORAGER and grid[self.x, self.y, P_FORAGER] > 16:
+            new_job = random.choices(jobs, weights=[grid[self.x, self.y, P_FORAGER]/8, 100])[0]
             if new_job != self.job:
                 self.job = new_job
                 self.goal = "explore"
@@ -96,10 +102,19 @@ class Ant:
                 for name, target_weight in goal_targets[self.goal].items():
                     layer_idx = P_MAP[name]
                     val = grid[nx, ny, layer_idx] + (baseline_amount * 10)
-                    total_score += val * target_weight
-                weights.append(max(0.1, total_score)) # Keep it positive
+                    step_len = np.sqrt(dx**2 + dy**2)
+                    normalized_dot = np.dot([dx/step_len, dy/step_len], [self.dx, self.dy])
+                    total_score += val * target_weight + (normalized_dot * 2)
+                weights.append(total_score)
+
+        min_score = min(weights)
+        weights = [w - min_score + 1 for w in weights]
 
         self.x, self.y = random.choices(options, weights=weights, k=1)[0]
+
+        self.dx = self.x - self.old_x
+        self.dy = self.y - self.old_y
+
         self.health -= 1
         
 
@@ -121,7 +136,7 @@ def diffuse_pheromones(grid, width, height): # High value = spreads faster
         ])
         
         # Apply to the correct layer (starting at index 2)
-        grid[:, :, i + 2] = convolve(grid[:, :, i + 2], kernel, mode='constant')
+        grid[:, :, i + 1] = convolve(grid[:, :, i + 1], kernel, mode='constant')
 
 def draw_grid(surface, grid):
     # 1. Create an empty RGB array (Width x Height x 3)
@@ -141,7 +156,7 @@ def draw_grid(surface, grid):
 
     # Home Pheromone (Layer 2) -> (0, 2, 0)
     home_ant = grid[:, :, P_HOME]
-    rgb[:, :, 1] += home_ant * 2
+    rgb[:, :, 1] += home_ant
 
     # Food Pheromone (Layer 3) -> (2, 2, 0)
     food_p_ant = grid[:, :, P_FOOD]
@@ -150,12 +165,11 @@ def draw_grid(surface, grid):
 
     # 3. Add the actual Food and Ants (the "Physical" layers)
     # You used + tile.ant * 100 + tile.food * 10 in your original code
-    rgb[:, :, 0] += grid[:, :, ANT] * 100 + grid[:, :, FOOD] * 75
+    rgb[:, :, 0] += grid[:, :, ANT] * 128 + grid[:, :, FOOD] * 75
     rgb[:, :, 1] += grid[:, :, FOOD] * 35
 
     # 4. Final step: Clip values to 0-255 and convert to 8-bit integers
     final_rgb = np.clip(rgb, 0, 255).astype(np.uint8)
 
     # 5. Push to the surface
-    # Note: surfarray uses (X, Y), so if your grid is (Y, X), use np.transpose
     pygame.surfarray.blit_array(surface, final_rgb)

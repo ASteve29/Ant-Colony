@@ -3,11 +3,11 @@ import numpy as np
 import random
 
 FOOD = 0
-ANT = 1
-P_HOME = 2
-P_FOOD = 3
-P_FORAGER = 4
-P_SCOUT = 5
+P_HOME = 1
+P_FOOD = 2
+P_FORAGER = 3
+P_SCOUT = 4
+ANT = 5
 
 def draw(grid, screen_width, screen_height, layer_index, size, intensity):
     mx, my = pygame.mouse.get_pos()
@@ -35,7 +35,7 @@ def draw(grid, screen_width, screen_height, layer_index, size, intensity):
             offset_x = random.randint(-size, size)
             offset_y = random.randint(-size, size)
 
-            if offset_x**2 + offset_y**2 >= size**2:
+            if offset_x**2 + offset_y**2 >= size**2 - 1:
                 continue
             
             # Place a small, sharp "grain" of food
@@ -86,7 +86,7 @@ def draw_custom_slider(screen, x, y, width, value, val_min, val_max, label):
 
 def grow_food_clumps(grid, num_clumps=10, steps=15, spread_chance=0.3, width=500, height=500, FOOD=0):
     for _ in range(num_clumps):
-        cx, cy = np.random.randint(50, width-50), np.random.randint(50, height-50)
+        cx, cy = np.random.randint(100, width-100), np.random.randint(100, height-100)
         grid[cx, cy, FOOD] = 16
 
     for _ in range(steps):
