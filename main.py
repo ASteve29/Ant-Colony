@@ -27,7 +27,7 @@ height = 500
 grid = np.zeros((width, height, 6), dtype=float)
 
 # Adding food
-grow_food_clumps(grid, num_clumps=20, steps=5, spread_chance=0.3, width = width, height = height)
+grow_food_clumps(grid, num_clumps=width*height//5000, steps=5, spread_chance=0.3, width = width, height = height)
 
 # Automatically calculate tile size so the grid fits the window
 tile_size = screen_width // width
@@ -40,7 +40,7 @@ ant_num = 200
 # --- Define grid ---
 		                        	
 colony_pos = (width // 2, height // 2)
-ants = [Ant(colony_pos, 30) for _ in range(ant_num)]
+ants = [Ant(colony_pos, 10) for _ in range(ant_num)]
 
 # Set the initial home scent at the center
 

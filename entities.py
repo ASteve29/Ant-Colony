@@ -21,13 +21,13 @@ baseline_amount = 0.01
 jobs = [P_SCOUT, P_FORAGER]
 goals = ["find food", "go home", "explore", "mate"]
 
-evap_rates = [0.99999999, 0.999, 0.99, 0.99]
-diffuse_rates = [0.2, 0.015, 0.05, 0.05]
+evap_rates = [0.9999999999, 0.999, 0.99, 0.99]
+diffuse_rates = [0.1, 0.015, 0.05, 0.05]
 
 goal_targets = {
-    "find food": {"home": -30, "food": 3, "forager ant": 0.1, "scout ant": 0.1},
+    "find food": {"home": -50, "food": 10, "forager ant": 10, "scout ant": 0.1},
     "go home": {"home": 50, "food": 0.01, "forager ant": 0.1, "scout ant": 0.1},
-    "explore": {"home": -50, "food": 0.1, "forager ant": 0.1, "scout ant": 0.1},
+    "explore": {"home": -50, "food": 5, "forager ant": 0.1, "scout ant": 0.1},
     "mate": {"home": 0.5, "food": 0.1, "forager ant": 1, "scout ant": 1}
 }
 
@@ -63,18 +63,22 @@ class Ant:
         # 2. Dropping Pheromones
         if self.goal == "go home" and self.job == P_FORAGER:
             grid[self.x, self.y, P_FOOD] += min(5, (self.trail_strength / 10) * (self.health / 500))
-            self.trail_strength *= 0.99
+            self.trail_strength -= 1
             if grid[self.x, self.y, P_HOME] > 64 and self.food > 0:
                 self.health += 50 * self.food
                 self.food = 0
                 self.goal = "find food"
                 self.trail_strength += 50
         elif self.goal in ["find food", "explore"]:
-            grid[self.x, self.y, P_HOME] += min(5, self.health/500 + (self.trail_strength / 50))
+            grid[self.x, self.y, P_HOME] += min(32, self.health/500 + (self.trail_strength / 50)) * 2
         
         # Job-specific scent
         scent_idx = P_FORAGER if self.job == P_FORAGER else P_SCOUT
         grid[self.x, self.y, scent_idx] += min(5, 5 * (self.health/500))
+
+        if self.goal == "find food" and grid[self.x, self.y, FOOD] == 0:
+            if grid[self.x, self.y, P_FOOD] > 0.1:
+                grid[self.x, self.y, P_FOOD] *= 0.9
 
         # 3. Changing Jobs
         if self.job == P_SCOUT and grid[self.x, self.y, P_SCOUT] > 16:

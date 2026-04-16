@@ -86,7 +86,7 @@ def draw_custom_slider(screen, x, y, width, value, val_min, val_max, label):
 
 def grow_food_clumps(grid, num_clumps=10, steps=15, spread_chance=0.3, width=500, height=500, FOOD=0):
     for _ in range(num_clumps):
-        cx, cy = np.random.randint(100, width-100), np.random.randint(100, height-100)
+        cx, cy = np.random.randint(100, width-50), np.random.randint(100, height-50)
         grid[cx, cy, FOOD] = 16
 
     for _ in range(steps):
