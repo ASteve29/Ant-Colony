@@ -113,3 +113,23 @@ def grow_food_clumps(grid, num_clumps=10, steps=15, spread_chance=0.3, width=500
             vals = [1, 2, 4, 8]
             probs = [0.8, 0.15, 0.04, 0.01] # Weighted towards lower density
             grid[actual_growth, FOOD] = np.random.choice(vals, size=num_new_tiles, p=probs)
+
+def draw_visibility_menu(screen, visibility):
+    overlay = pygame.Surface((200, 240), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 50)) 
+    center_x, center_y = screen.get_width() // 2, screen.get_height() // 2
+    screen.blit(overlay, (center_x - 100, center_y - 120))
+    
+    font = pygame.font.SysFont("Arial", 16, bold=True)
+    mx, my = pygame.mouse.get_pos()
+    
+    for i, (key, val) in enumerate(visibility.items()):
+        rect = pygame.Rect(center_x - 80, center_y - 100 + i * 40, 160, 30)
+        
+        # Hover effect
+        color = (60, 60, 60) if rect.collidepoint(mx, my) else (40, 40, 40)
+        pygame.draw.rect(screen, color, rect)
+        pygame.draw.rect(screen, (200, 200, 200), rect, 1) # Border
+        
+        label = font.render(f"{key}: {'ON' if val else 'OFF'}", True, (0, 255, 0) if val else (255, 50, 50))
+        screen.blit(label, (rect.x + 10, rect.y + 5))

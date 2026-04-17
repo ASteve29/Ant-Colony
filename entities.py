@@ -62,7 +62,7 @@ class Ant:
 
         # 2. Dropping Pheromones
         if self.goal == "go home" and self.job == P_FORAGER:
-            grid[self.x, self.y, P_FOOD] += min(5, (self.trail_strength / 10) * (self.health / 500))
+            grid[self.x, self.y, P_FOOD] += min(128, (self.trail_strength / 10) * np.exp(self.health/500)) * 2
             self.trail_strength -= 1
             if grid[self.x, self.y, P_HOME] > 64 and self.food > 0:
                 self.health += 50 * self.food
@@ -142,35 +142,43 @@ def diffuse_pheromones(grid, width, height): # High value = spreads faster
         # Apply to the correct layer (starting at index 2)
         grid[:, :, i + 1] = convolve(grid[:, :, i + 1], kernel, mode='constant')
 
-def draw_grid(surface, grid):
+def draw_grid(surface, grid, visibility):
     # 1. Create an empty RGB array (Width x Height x 3)
     # Use float32 for calculations to avoid rounding errors during math
     rgb = np.zeros((grid.shape[0], grid.shape[1], 3), dtype=np.float32)
 
     # 2. Apply your colour_map logic using NumPy layers
     # Scout Ant Pheromone (Layer 5) -> (3, 0, 3)
-    scout_ant = grid[:, :, P_SCOUT]
-    rgb[:, :, 0] += scout_ant * 3
-    rgb[:, :, 2] += scout_ant * 3
+    if visibility["P_SCOUT"]:
+        scout_ant = grid[:, :, P_SCOUT]
+        rgb[:, :, 0] += scout_ant * 3
+        rgb[:, :, 2] += scout_ant * 3
 
     # Forager Ant Pheromone (Layer 4) -> (0, 3, 3)
-    forager_ant = grid[:, :, P_FORAGER]
-    rgb[:, :, 1] += forager_ant * 3
-    rgb[:, :, 2] += forager_ant * 3
+    if visibility["P_FORAGER"]:
+        forager_ant = grid[:, :, P_FORAGER]
+        rgb[:, :, 1] += forager_ant * 3
+        rgb[:, :, 2] += forager_ant * 3
 
     # Home Pheromone (Layer 2) -> (0, 2, 0)
-    home_ant = grid[:, :, P_HOME]
-    rgb[:, :, 1] += home_ant
+    if visibility["P_HOME"]:
+        home_ant = grid[:, :, P_HOME]
+        rgb[:, :, 1] += home_ant
 
     # Food Pheromone (Layer 3) -> (2, 2, 0)
-    food_p_ant = grid[:, :, P_FOOD]
-    rgb[:, :, 0] += food_p_ant * 2
-    rgb[:, :, 1] += food_p_ant * 2
+    if visibility["P_FOOD"]:
+        food_p_ant = grid[:, :, P_FOOD]
+        rgb[:, :, 0] += food_p_ant * 2
+        rgb[:, :, 1] += food_p_ant * 2
 
     # 3. Add the actual Food and Ants (the "Physical" layers)
     # You used + tile.ant * 100 + tile.food * 10 in your original code
-    rgb[:, :, 0] += grid[:, :, ANT] * 128 + grid[:, :, FOOD] * 75
-    rgb[:, :, 1] += grid[:, :, FOOD] * 35
+    if visibility["ANTS"]:
+        rgb[:, :, 0] += grid[:, :, ANT] * 128
+    
+    if visibility["FOOD"]:
+        rgb[:, :, 0] += grid[:, :, FOOD] * 75
+        rgb[:, :, 1] += grid[:, :, FOOD] * 35
 
     # 4. Final step: Clip values to 0-255 and convert to 8-bit integers
     final_rgb = np.clip(rgb, 0, 255).astype(np.uint8)

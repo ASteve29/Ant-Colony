@@ -2,7 +2,7 @@ import random
 import pygame
 import numpy as np
 from entities import Ant, diffuse_pheromones, draw_grid, evap_rates, diffuse_rates
-from ui import draw_custom_slider, draw, grow_food_clumps
+from ui import draw_custom_slider, draw, grow_food_clumps, draw_visibility_menu
 
 pygame.init()
 
@@ -56,6 +56,15 @@ clock = pygame.time.Clock()
 grid_surface = pygame.Surface((width, height))
 running = True
 
+show_menu = False
+visibility = {
+    "P_HOME": True,
+    "P_FOOD": True,
+    "P_SCOUT": True,
+    "P_FORAGER": True,
+    "FOOD": True,
+    "ANTS": True
+}
 brush_size = 5
 brush_layer = 0
 
@@ -71,6 +80,9 @@ while running:
         ant.move(grid, width, height)
         grid[ant.x, ant.y, ANT] += ant.health/1000
 
+    keys = pygame.key.get_pressed()
+    show_menu = keys[pygame.K_v]
+
     # Event
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -80,13 +92,27 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.unicode in ['1', '2', '3', '4', '5', '6']:
                 draw_type = int(event.unicode) - 1
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            # Check if the V key is currently being held down
+            if pygame.key.get_pressed()[pygame.K_v]:
+                mx, my = pygame.mouse.get_pos()
+                center_x, center_y = screen_width // 2, screen_height // 2
+                
+                # This loop must match the order in your visibility dictionary
+                for i, key in enumerate(visibility.keys()):
+                    # This Rect needs to match the one in ui.py exactly
+                    button_rect = pygame.Rect(center_x - 80, center_y - 100 + i * 40, 160, 30)
+                    if button_rect.collidepoint(mx, my):
+                        visibility[key] = not visibility[key]
+
+                
 
     # Mouse
     mouse_buttons = pygame.mouse.get_pressed()
     if mouse_buttons[0]: # 0 is Left Click
         mx, my = pygame.mouse.get_pos()
         if not (mx < 200 and my < 150): 
-            draw(grid, screen_width, screen_height, draw_type, brush_size, 1)
+            draw(grid, screen_width, screen_height, draw_type, brush_size, 16)
     if mouse_buttons[2]:
         mx, my = pygame.mouse.get_pos()
         if not (mx < 200 and my < 150): 
@@ -97,11 +123,14 @@ while running:
 
     grid[:, :, 2:5] = np.clip(grid[:, :, 2:5], 0, 128)
 
-    draw_grid(grid_surface, grid)
+    draw_grid(grid_surface, grid, visibility)
 
     scaled_surface = pygame.transform.scale(grid_surface, (screen_width, screen_height))
     screen.blit(scaled_surface, (0, 0))
 
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_v]:
+        draw_visibility_menu(screen, visibility)
     
     labels = ["Home Decay", "Food Decay", "Forager Decay", "Scout Decay"]
     for i in range(4):
