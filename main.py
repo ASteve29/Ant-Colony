@@ -1,5 +1,6 @@
 import random
 import pygame
+import json
 import numpy as np
 from entities import Ant, diffuse_pheromones, draw_grid, evap_rates, diffuse_rates
 from ui import draw_custom_slider, draw, grow_food_clumps, draw_visibility_menu
