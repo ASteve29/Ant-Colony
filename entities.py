@@ -1,5 +1,6 @@
 import random
 import pygame
+import json
 import numpy as np
 from scipy.ndimage import convolve
 
