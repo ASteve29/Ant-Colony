@@ -1,0 +1,30 @@
+{
+  "grid": {
+    "width": 500,
+    "height": 500
+  },
+  "ants": {
+    "initial_count": 200,
+    "spawn_range": 10,
+    "spawn_chance_percent": 10,
+    "max_population": 500
+  },
+  "pheromones": {
+    "evap_rates": [0.9999999999, 0.999, 0.99, 0.99],
+    "diffuse_rates": [0.1, 0.015, 0.05, 0.05],
+    "baseline_amount": 0.01
+  },
+  "ants_behavior": {
+    "goal_targets": {
+      "find food": {"home": -50, "food": 10, "forager ant": 10, "scout ant": 0.1},
+      "go home": {"home": 50, "food": 0.01, "forager ant": 0.1, "scout ant": 0.1},
+      "explore": {"home": -50, "food": 5, "forager ant": 0.1, "scout ant": 0.1},
+      "mate": {"home": 0.5, "food": 0.1, "forager ant": 1, "scout ant": 1}
+    }
+  },
+  "food": {
+    "initial_clumps": 50,
+    "clump_spread_steps": 5,
+    "clump_spread_chance": 0.3
+  }
+}

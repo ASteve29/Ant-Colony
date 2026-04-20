@@ -1,8 +1,12 @@
 import random
 import pygame
+import json
 import numpy as np
 from entities import Ant, diffuse_pheromones, draw_grid, evap_rates, diffuse_rates
 from ui import draw_custom_slider, draw, grow_food_clumps, draw_visibility_menu
+
+with open('config.json', 'r') as f:
+    CONFIG = json.load(f)
 
 pygame.init()
 
@@ -21,8 +25,9 @@ info = pygame.display.Info()
 
 screen_width = min(info.current_w, info.current_h) - 50
 screen_height = screen_width
-width = 500
-height = 500
+width = CONFIG['grid']['width']
+height = CONFIG['grid']['height']
+
 def __main__():
     grid = np.zeros((width, height, 6), dtype=float)
 
