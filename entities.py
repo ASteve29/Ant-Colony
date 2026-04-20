@@ -4,6 +4,9 @@ import json
 import numpy as np
 from scipy.ndimage import convolve
 
+with open('config.json', 'r') as f:
+    CONFIG = json.load(f)
+
 FOOD = 0
 P_HOME = 1
 P_FOOD = 2
@@ -18,19 +21,14 @@ P_MAP = {
     "scout ant": P_SCOUT
 }
 
-baseline_amount = 0.01
+baseline_amount = CONFIG['pheromones']['baseline_amount']
 jobs = [P_SCOUT, P_FORAGER]
 goals = ["find food", "go home", "explore", "mate"]
 
-evap_rates = [0.9999999999, 0.999, 0.99, 0.99]
-diffuse_rates = [0.1, 0.015, 0.05, 0.05]
+evap_rates = CONFIG['pheromones']['evap_rates'].copy()
+diffuse_rates = CONFIG['pheromones']['diffuse_rates'].copy()
 
-goal_targets = {
-    "find food": {"home": -50, "food": 10, "forager ant": 10, "scout ant": 0.1},
-    "go home": {"home": 50, "food": 0.01, "forager ant": 0.1, "scout ant": 0.1},
-    "explore": {"home": -50, "food": 5, "forager ant": 0.1, "scout ant": 0.1},
-    "mate": {"home": 0.5, "food": 0.1, "forager ant": 1, "scout ant": 1}
-}
+goal_targets = CONFIG['ants_behavior']['goal_targets']
 
 # Classes
 
