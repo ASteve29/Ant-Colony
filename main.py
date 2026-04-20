@@ -5,6 +5,10 @@ import numpy as np
 from entities import Ant, diffuse_pheromones, draw_grid, evap_rates, diffuse_rates
 from ui import draw_custom_slider, draw, grow_food_clumps, draw_visibility_menu
 
+# Load configuration
+with open('config.json', 'r') as f:
+    CONFIG = json.load(f)
+
 pygame.init()
 
 FOOD = 0
@@ -22,13 +26,22 @@ info = pygame.display.Info()
 
 screen_width = min(info.current_w, info.current_h) - 50
 screen_height = screen_width
-width = 500
-height = 500
+width = CONFIG['grid']['width']
+height = CONFIG['grid']['height']
+
 def __main__():
     grid = np.zeros((width, height, 6), dtype=float)
 
-    # Adding food
-    grow_food_clumps(grid, num_clumps=width*height//5000, steps=5, spread_chance=0.3, width = width, height = height)
+    # Adding food - use config values
+    num_clumps = (width * height) // 5000
+    grow_food_clumps(
+        grid, 
+        num_clumps=num_clumps,
+        steps=CONFIG['food']['clump_spread_steps'],
+        spread_chance=CONFIG['food']['clump_spread_chance'],
+        width=width,
+        height=height
+    )
 
     # Automatically calculate tile size so the grid fits the window
     tile_size = screen_width // width
@@ -36,12 +49,13 @@ def __main__():
     screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
     pygame.display.set_caption("Ant Colony Grid")
 
-    ant_num = 200
+    ant_num = CONFIG['ants']['initial_count']
+    max_ants = CONFIG['ants']['max_population']
 
     # --- Define grid ---
                                         
     colony_pos = (width // 2, height // 2)
-    ants = [Ant(colony_pos, 10) for _ in range(ant_num)]
+    ants = [Ant(colony_pos, CONFIG['ants']['spawn_range']) for _ in range(ant_num)]
 
     # Set the initial home scent at the center
 
@@ -53,7 +67,6 @@ def __main__():
 
     # --- Main loop ---
     clock = pygame.time.Clock()
-    # This small surface corresponds to our 75x75 grid
     grid_surface = pygame.Surface((width, height))
     running = True
 
@@ -74,8 +87,9 @@ def __main__():
         time_delta = clock.tick(25) / 1000.0 
 
         grid[ :, :, ANT] = 0
-        if random.randrange(0, 100, 1) > 90:
-            ants.append(Ant(colony_pos, 5))
+        spawn_chance = CONFIG['ants']['spawn_chance_percent']
+        if random.randrange(0, 100, 1) > (100 - spawn_chance) and len(ants) < max_ants:
+            ants.append(Ant(colony_pos, CONFIG['ants']['spawn_range']))
         ants = [ant for ant in ants if ant.health > 0]
         for ant in ants:
             ant.move(grid, width, height)
